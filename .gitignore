@@ -1,0 +1,51 @@
+# User-supplied media and saves
+*.gba
+*.sav
+*.sav.*
+saves/
+bios/
+recomp_cache/
+*.ss0
+*.ss1
+*.ss2
+*.ss3
+
+# Build / generation artifacts (local-only)
+build/
+generated/
+.deps/
+logs/
+*.o
+*.obj
+*.lib
+*.a
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.exp
+
+# Decomp clone (local research copy; no public LICENSE upstream)
+third_party/aw2bhr/
+
+# Debug / traces
+*.log
+*.trace
+*.dump
+*.png
+*.bmp
+*.gif
+!docs/**/*.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vs/
+.vscode/
+*.swp
+*~
+
+# Internal notes & private documents
+AGENT_PROMPT.md
+docs/
+PROGRESS.md

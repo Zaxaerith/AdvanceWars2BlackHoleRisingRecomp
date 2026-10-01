@@ -1,0 +1,485 @@
+# ---------------------------------------------------------------------------
+# Advance Wars 2: Black Hole Rising (GBA, USA "AW2E") — gbarecomp game config.
+#
+# One file serves both pipeline sides (docs/TOML_SCHEMA.md):
+#   * recompiler  -> [program], [identity], discovery metadata
+#   * runtime     -> [rom], [bios], [save], [video], [audio], [runtime]
+#
+# Provenance: identity values were measured from the verified local ROM
+# (see baserom.md). Nothing here is copied from another game's address table.
+#
+# HUMAN-REVIEWED ONLY: never auto-merge recomp_master_misses_*.toml.frag
+# proposals into this file.
+# ---------------------------------------------------------------------------
+
+[game]
+name = "Advance Wars 2: Black Hole Rising"
+short_name = "aw2bhr"
+
+[program]
+name = "Advance Wars 2: Black Hole Rising"
+id = "AW2E"
+load_address = 0x08000000
+size = 0x00800000
+entry_pc = 0x080000C0          # cartridge reset: ARM branch at 0x00 (0xEA00002E)
+codegen_shards = 8
+# OFF: PC-relative literal harvest was shredding AgbMain / sub_080368E8 into
+# 4-byte micro-functions (every interior label became a dispatch root). The
+# guest `b` main-loop then compiled to mutual runtime_dispatch recursion and
+# overflowed the host stack at ~frame 334. Keep harvest off until the finder
+# only accepts compiler-shaped function prologues.
+speculative_literal_harvest = false
+# OFF: every-instruction resume switches made static bodies huge and runs
+# ~90 ms/frame even on a FULLY_STATIC BIOS intro. Interior labels that need
+# resume are declared explicitly with [[extra_func]] resume = true.
+static_resume_all = false
+
+[identity]
+sha1 = "14dd0b22c894865867aff89e8116b2dffae25605"
+md5 = "46599031ef71117c587bd3666c326c07"
+
+[rom]
+path = "Advance Wars 2 - Black Hole Rising (USA).gba"
+sha1 = "14dd0b22c894865867aff89e8116b2dffae25605"
+
+[bios]
+sha1 = "300c20df6731a33952ded8c436f7f186d25d3492"
+# LLE default: execute the recompiled BIOS through the dispatch table.
+hle = false
+skip_intro = false
+
+[save]
+# Evidence: ROM file offset 0x485480 holds ASCII "FLASH_V126" (bare FLASH_V).
+# Framework detector maps bare FLASH_V -> Flash512. Full save/load cycle is
+# still untested; if the driver probes a 1 Mbit chip, switch to flash1m/131072.
+type = "flash512"
+size = 65536
+path = "saves/aw2bhr_usa.sav"
+
+[runtime]
+window_title = "AdvanceWars2BlackHoleRisingRecomp"
+
+[video]
+screen = "raw"
+view_width = 240
+resize_view = false
+
+[audio]
+shadow = false
+
+# ---------------------------------------------------------------------------
+# Discovery metadata — reviewed merge of logs/run300-misses.toml.frag
+# (300-frame headless boot, 2026-10-01). HUMAN-REVIEWED; never auto-merge.
+#
+# Source evidence from third_party/aw2bhr @ 63a2694 (local-only, no LICENSE):
+#   * src/crt0.s: IrqMain @ 0x080000FC, interior return label 0x080001F8
+#   * asm/*: thumb_func_start sub_08067564 / sub_08067690 / sub_080688C8 /
+#            sub_08068BE4 / sub_0806FB6C / sub_0806FB84
+# Rejected (not declared on purpose):
+#   * 0x03000FB0 — aw2bhr.lds marks gUnknown_03000FB0 as IWRAM DATA
+#     (after libgcc dp-bit/fp-bit .bss), not a code_copy. Dynamic/code-or-data
+#     confusion; leave to interpreter until a real writer is identified.
+#   * 0x03007C90..0x03007D80 — high IWRAM next to the system stack
+#     (crt0 sp=0x03007E00). Same family as WarioLand4 F6 stack-stubs; declaring
+#     them as static functions caused wild jumps there. Leave interpreted.
+# ---------------------------------------------------------------------------
+
+# ARM IRQ dispatcher, reached through the user IRQ vector at 0x03007FFC
+# (crt0 stores IrqMain there). Nothing calls it statically.
+[[extra_func]]
+addr = 0x080000FC
+mode = "arm"
+name = "IrqMain"
+note = "crt0.s IrqMain; installed as user IRQ vector 0x03007FFC"
+
+# Interior labels of IrqMain MUST be resume aliases, not roots — a root makes
+# every `b`/`bx lr` a runtime_dispatch call and the IRQ path nests 1024-deep
+# (generated call-return stack overflow at 0x0806FE24).
+[[extra_func]]
+addr = 0x08000120
+mode = "arm"
+resume = true
+note = "IrqMain spin-wait interior (`bne _08000120`); NOT a root"
+
+[[extra_func]]
+addr = 0x080001CC
+mode = "arm"
+resume = true
+note = "IrqMain IF-acknowledge interior; NOT a root"
+
+[[extra_func]]
+addr = 0x080001F8
+mode = "arm"
+resume = true
+note = "IrqMain continuation after user IRQ handler returns (crt0.s lr target)"
+
+[[extra_func]]
+addr = 0x08067564
+mode = "thumb"
+name = "sub_08067564"
+note = "aw2bhr asm/code-0801D390.s thumb_func_start; bridged x15"
+
+[[extra_func]]
+addr = 0x08067690
+mode = "thumb"
+name = "sub_08067690"
+note = "aw2bhr asm/code-0801D390.s thumb_func_start; bridged x1"
+
+[[extra_func]]
+addr = 0x08067766
+mode = "thumb"
+note = "runtime miss; nearby cluster with sub_08067564; address-only"
+
+[[extra_func]]
+addr = 0x080688C8
+mode = "thumb"
+name = "sub_080688C8"
+note = "aw2bhr asm/code-0801D390.s thumb_func_start; bridged x11"
+
+[[extra_func]]
+addr = 0x08068BE4
+mode = "thumb"
+name = "sub_08068BE4"
+note = "aw2bhr asm/code-0801D390.s thumb_func_start; bridged x1"
+
+[[extra_func]]
+addr = 0x0806FB6C
+mode = "thumb"
+name = "sub_0806FB6C"
+note = "aw2bhr asm/code-0806CFC8.s thumb_func_start; bridged x17"
+
+[[extra_func]]
+addr = 0x0806FB84
+mode = "thumb"
+name = "sub_0806FB84"
+note = "aw2bhr asm/code-0806CFC8.s thumb_func_start; bridged x4"
+
+# --- jump-table candidate clusters (kept as per-address entries for now) ------
+# 0x0801CD9C..0x0801CE88 and 0x0806FCA0..0x0806FCFE were flagged as switch case
+# targets. Table bases are NOT yet sized; do not invent a [[jump_table]].
+# Revisit with find_rom_table.py after the IrqMain path is fully static.
+
+[[extra_func]]
+addr = 0x0801CD9C
+mode = "thumb"
+note = "jt-candidate cluster A; address-only"
+
+[[extra_func]]
+addr = 0x0801CE14
+mode = "thumb"
+note = "jt-candidate cluster A; address-only"
+
+[[extra_func]]
+addr = 0x0801CE78
+mode = "thumb"
+note = "jt-candidate cluster A; address-only"
+
+[[extra_func]]
+addr = 0x0801CE88
+mode = "thumb"
+note = "jt-candidate cluster A; address-only"
+
+[[extra_func]]
+addr = 0x0806FCA0
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCA6
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCB4
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCBA
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCC8
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCE2
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCEA
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCF2
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCF8
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+[[extra_func]]
+addr = 0x0806FCFE
+mode = "thumb"
+note = "jt-candidate cluster B; address-only"
+
+# 0x08000000 (ROM header ARM branch) was briefly declared and is NOT re-added:
+# treating the image header as a callable function lets a bad pointer re-enter
+# crt0/AgbMain from inside the game. The entry seed is entry_pc=0x080000C0.
+
+# Second review pass (post-merge run300, distinct_misses 30 -> 11).
+[[extra_func]]
+addr = 0x0801CFC8
+mode = "thumb"
+note = "post-merge miss; address-only"
+
+[[extra_func]]
+addr = 0x08067554
+mode = "thumb"
+note = "post-merge miss just before sub_08067564; address-only"
+
+[[extra_func]]
+addr = 0x080688A8
+mode = "thumb"
+note = "post-merge miss just before sub_080688C8; address-only"
+
+[[extra_func]]
+addr = 0x08068AC4
+mode = "thumb"
+note = "post-merge miss; address-only"
+
+[[extra_func]]
+addr = 0x08068B7E
+mode = "thumb"
+note = "post-merge miss just before sub_08068BE4; address-only"
+
+# Third pass (v2 run300, distinct_misses 11 -> 8).
+[[extra_func]]
+addr = 0x08067638
+mode = "thumb"
+name = "sub_08067638"
+note = "aw2bhr asm/code-0801D390.s thumb_func_start"
+
+[[extra_func]]
+addr = 0x0808AABC
+mode = "thumb"
+name = "LZ77UnCompVram"
+note = "aw2bhr asm/code-0806CFC8.s; thumb stub `swi 0x12` (BIOS LZ77 VRAM)"
+
+# --- AgbMain main-loop interior labels ---------------------------------------
+# AgbMain @ 0x08036D1C (aw2bhr). The spin loop at 0x08036DFE..0x08036E0C is
+# `while (1) { call_via_r0(); sub_08036E18(); }` — a guest infinite loop of BLs.
+# If 0x08036DFE / 0x08036E08 are separate dispatch roots the `b` between them
+# becomes mutual C++ recursion (STATUS_STACK_OVERFLOW ~frame 334). Mark them as
+# resume aliases so they roll into AgbMain instead of standing alone.
+[[extra_func]]
+addr = 0x08036DFE
+mode = "thumb"
+resume = true
+note = "AgbMain main-loop head (ldr r0,[r4]; cmp; beq) — interior, not a root"
+
+[[extra_func]]
+addr = 0x08036E08
+mode = "thumb"
+resume = true
+note = "AgbMain main-loop body (bl sub_08036E18; b 0x08036DFE) — interior"
+
+[[extra_func]]
+addr = 0x08036E0C
+mode = "thumb"
+resume = true
+note = "AgbMain main-loop back-branch — interior"
+
+# --- hot ROM misses after AgbMain fix (1800-frame run, 2026-10-01) ----------
+# sub_080368E8 is the single hottest bridge (3.7M x). Real function
+# (aw2bhr thumb_func_start); harvest-off left it undiscovered.
+
+[[extra_func]]
+addr = 0x080368E8
+mode = "thumb"
+name = "sub_080368E8"
+note = "aw2bhr thumb_func_start; hottest bridge after AgbMain fix (x3.7M)"
+
+[[extra_func]]
+addr = 0x080366F4
+mode = "thumb"
+name = "sub_080366F4"
+note = "aw2bhr; bridged x1515"
+
+[[extra_func]]
+addr = 0x08036884
+mode = "thumb"
+name = "sub_08036884"
+note = "aw2bhr thumb_func_start; game loop helper"
+
+[[extra_func]]
+addr = 0x080368B6
+mode = "thumb"
+resume = true
+note = "interior of sub_08036884 (branch target); NOT a root"
+
+[[extra_func]]
+addr = 0x0801BBC4
+mode = "thumb"
+name = "sub_0801BBC4"
+note = "aw2bhr thumb_func_start; BI/Win copy"
+
+[[extra_func]]
+addr = 0x0801BBD4
+mode = "thumb"
+resume = true
+note = "interior of sub_0801BBC4; NOT a root"
+
+[[extra_func]]
+addr = 0x0801BC08
+mode = "thumb"
+name = "sub_0801BC08"
+note = "aw2bhr thumb_func_start; BI/Win copy (bl CpuFastSet)"
+
+[[extra_func]]
+addr = 0x0801BC1E
+mode = "thumb"
+resume = true
+note = "interior of sub_0801BC08 (`bl CpuFastSet` return); NOT a root"
+
+[[extra_func]]
+addr = 0x0801CAEE
+mode = "thumb"
+resume = true
+note = "interior near sub_0801CA52; NOT a root"
+
+[[extra_func]]
+addr = 0x0806F784
+mode = "thumb"
+note = "bridged x1515; address-only"
+
+[[extra_func]]
+addr = 0x0806FDE4
+mode = "thumb"
+name = "sub_0806FDE4"
+note = "aw2bhr thumb_func_start; bridged x13635"
+
+# Interior of sub_0806FDE4 (decomp label _0806FE00) — resume, not a root.
+[[extra_func]]
+addr = 0x0806FE00
+mode = "thumb"
+resume = true
+note = "interior of sub_0806FDE4 (`beq _0806FE00`); NOT a root"
+
+# --- 3600-frame title-run hot misses (2026-10-01) ---------------------------
+# Callback-table runners sub_08011AD8 / sub_08011B98 (`bl _call_via_r0` loops).
+# Their continue labels MUST be resume aliases: as roots, `bl` return_pc lands
+# on a dispatch entry and the loop nests the call-return stack to 1024
+# (overflow at return_pc=0x08011BAE).
+
+[[extra_func]]
+addr = 0x08011AD8
+mode = "thumb"
+name = "sub_08011AD8"
+note = "aw2bhr; callback-table runner (gUnknown_03002FA0)"
+
+[[extra_func]]
+addr = 0x08011AEA
+mode = "thumb"
+resume = true
+note = "interior loop head of sub_08011AD8 (`blt _08011AEA`); NOT a root"
+
+[[extra_func]]
+addr = 0x08011B04
+mode = "thumb"
+resume = true
+note = "interior of sub_08011AD8 (`ble _08011B04`); NOT a root"
+
+[[extra_func]]
+addr = 0x08011B08
+mode = "thumb"
+resume = true
+note = "interior of sub_08011AD8 (`bl sub_08011A84`); NOT a root"
+
+[[extra_func]]
+addr = 0x08011B98
+mode = "thumb"
+name = "sub_08011B98"
+note = "aw2bhr; callback-table runner (gUnknown_03000000[0..15])"
+
+# 0x08011B9E is the LOOP HEAD of sub_08011B98 (`bls _08011B9E`). As a root,
+# every loop iteration `runtime_dispatch`es into gf_tfunc_08011B9E and nests
+# the call-return stack until 1024. Must be a resume alias, not a root.
+[[extra_func]]
+addr = 0x08011B9E
+mode = "thumb"
+resume = true
+note = "interior loop head of sub_08011B98 (`bls _08011B9E`); NOT a root"
+
+[[extra_func]]
+addr = 0x08011BAE
+mode = "thumb"
+resume = true
+note = "interior of sub_08011B98 (loop continue after `bl _call_via_r0`); NOT a root"
+
+[[extra_func]]
+addr = 0x08011B1E
+mode = "thumb"
+resume = true
+note = "interior of sub_08011B18 (loop head); NOT a root"
+
+[[extra_func]]
+addr = 0x08070FAC
+mode = "thumb"
+note = "bridged x3315; address-only"
+
+[[extra_func]]
+addr = 0x0806C9C0
+mode = "thumb"
+note = "bridged x1670; address-only"
+
+[[extra_func]]
+addr = 0x0806CBA8
+mode = "thumb"
+note = "bridged x1662; jt-candidate; address-only"
+
+[[extra_func]]
+addr = 0x0806CF28
+mode = "thumb"
+note = "bridged x1503; address-only"
+
+[[extra_func]]
+addr = 0x0806CCE4
+mode = "thumb"
+note = "bridged x1503; address-only"
+
+[[extra_func]]
+addr = 0x080700C0
+mode = "thumb"
+note = "bridged x846; address-only"
+
+[[extra_func]]
+addr = 0x0807022E
+mode = "thumb"
+note = "bridged x846; jt-candidate; address-only"
+
+[[extra_func]]
+addr = 0x08070254
+mode = "thumb"
+note = "bridged x846; jt-candidate; address-only"
+
+[[extra_func]]
+addr = 0x08070298
+mode = "thumb"
+note = "bridged x846; jt-candidate; address-only"
+
+[[extra_func]]
+addr = 0x08070206
+mode = "thumb"
+note = "bridged x846; jt-candidate; address-only"
+
+[[extra_func]]
+addr = 0x0806778C
+mode = "thumb"
+note = "bridged x709; address-only"

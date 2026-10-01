@@ -1,0 +1,24 @@
+# gbarecomp-keyinput-v1
+# frame,keyinput_active_low
+# Absolute frames from map.state (loaded at frame=6454).
+# If state is already at map cmd menu: B closes it, then unit ops.
+0,0x03FF
+6520,0x03FD
+6560,0x03FF
+6620,0x03DF
+6660,0x03FF
+6720,0x037F
+6760,0x03FF
+6820,0x03FE
+6860,0x03FF
+6920,0x03EF
+6960,0x03FF
+7020,0x03EF
+7060,0x03FF
+7120,0x03FE
+7160,0x03FF
+7300,0x03FE
+7340,0x03FF
+7500,0x03FE
+7540,0x03FF
+8500,0x03FF

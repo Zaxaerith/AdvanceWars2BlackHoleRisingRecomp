@@ -1,0 +1,54 @@
+# gbarecomp-keyinput-v1
+# frame,keyinput_active_low
+#
+# AW2 Campaign bring-up route (2026-10-01).
+# Prologue "Max's Lands" is on screen by frame ~5200 after START+A.
+# Continue pressing A to advance prologue text / enter first mission.
+
+0,0x03FF
+
+# START from title
+3800,0x03F7
+3820,0x03FF
+
+# A → Campaign
+4200,0x03FE
+4220,0x03FF
+
+# A → confirm / advance prologue
+4600,0x03FE
+4620,0x03FF
+
+# keep advancing prologue / mission select
+5400,0x03FE
+5420,0x03FF
+
+5800,0x03FE
+5820,0x03FF
+
+6200,0x03FE
+6220,0x03FF
+
+6600,0x03FE
+6620,0x03FF
+
+7000,0x03FE
+7020,0x03FF
+
+7400,0x03FE
+7420,0x03FF
+
+7800,0x03FE
+7820,0x03FF
+
+8200,0x03FE
+8220,0x03FF
+
+8600,0x03FE
+8620,0x03FF
+
+9000,0x03FE
+9020,0x03FF
+
+# idle
+9500,0x03FF

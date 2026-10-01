@@ -1,0 +1,23 @@
+# gbarecomp-keyinput-v1
+# frame,keyinput_active_low
+# Starts from map.state (cmd menu open). Navigate to Save and confirm.
+# Down=0x037F A=0x03FE B=0x03FD
+0,0x03FF
+# Down x3 to Save (CO -> Intel -> Options -> Save)
+60,0x037F
+100,0x03FF
+160,0x037F
+200,0x03FF
+260,0x037F
+300,0x03FF
+# A on Save
+400,0x03FE
+440,0x03FF
+# confirm dialogs with A
+700,0x03FE
+740,0x03FF
+1000,0x03FE
+1040,0x03FF
+1300,0x03FE
+1340,0x03FF
+2000,0x03FF

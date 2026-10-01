@@ -1,0 +1,27 @@
+# gbarecomp-keyinput-v1
+# frame,keyinput_active_low
+#
+# AW2 title → main menu. Title is stable by frame ~3600 (frame-3600.png).
+# GBA KEYINPUT is active LOW: 0x03FF = nothing held.
+# START = bit 3 (0x0008) → hold 0x03F7.
+# A     = bit 0 (0x0001) → hold 0x03FE.
+#
+# Sequence: idle to title, press START, release, then A to pick top menu item.
+
+# nothing held until title is up
+0,0x03FF
+
+# START press (title → menu)
+3800,0x03F7
+3820,0x03FF
+
+# A press (select Campaign / top item)
+4200,0x03FE
+4220,0x03FF
+
+# A press again (confirm / enter)
+4600,0x03FE
+4620,0x03FF
+
+# idle after menu actions
+5000,0x03FF
